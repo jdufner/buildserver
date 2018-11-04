@@ -48,7 +48,7 @@ services:
 
   jenkins:
     #image: jenkins/jenkins:lts
-    image: jdufner/jenkins:v2
+    image: jdufner/jenkins:v3
     container_name: jenkins
     ports:
       - 8080:8080

@@ -3,8 +3,10 @@ FROM jenkins/jenkins:lts
 # use user if we want to install new software
 USER root
 #
-#RUN apk add --update bash && rm -rf /var/cache/apk/*
-#RUN apk add --nocache curl tar bash
+# Language / Locale
+#ENV LANG en_US.UTF-8
+#ENV LANGUAGE en_US:en
+#ENV LC_ALL en_US.UTF-8
 #
 # Add Maven to /opt/maven-$MAVEN_VERSION
 ARG MAVEN_VERSION=3.5.4
@@ -19,6 +21,20 @@ ENV MAVEN_HOME /usr/share/maven-$MAVEN_VERSION
 # Add OpenJDK-11
 RUN mkdir /opt/jdk-11 && \
 curl -fsSL https://download.java.net/java/ga/jdk11/openjdk-11_linux-x64_bin.tar.gz | tar -xzC /opt/jdk-11 --strip-components=1
+#
+# Add Node
+RUN apt-get -y update
+RUN DEBIAN_FRONTEN=noninteractive apt-get install -y --no-install-recommends apt-utils
+RUN apt-get install -y curl
+RUN curl --silent --location https://deb.nodesource.com/setup_8.x | bash -
+RUN apt-get install -y nodejs
+RUN apt-get install -y build-essential
+RUN node -v
+RUN npm -v
+#
+# Add Angular CLI
+RUN npm install -g @angular/cli
+RUN ng --version
 #
 # back to user jenkins
 USER jenkins
