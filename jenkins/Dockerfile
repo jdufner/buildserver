@@ -40,5 +40,10 @@ RUN npm -v
 RUN npm install -g @angular/cli
 RUN ng --version
 #
+# Add Graphviz
+RUN apt-get -y update
+RUN apt-get install -y graphviz
+RUN dot -version
+#
 # back to user jenkins
 USER jenkins
