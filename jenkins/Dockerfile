@@ -47,3 +47,7 @@ RUN dot -version
 #
 # back to user jenkins
 USER jenkins
+#
+# Jenkins Settings
+# HTML Publisher plugin should display CSS in correct way
+ENV JAVA_OPTS "-Dhudson.model.DirectoryBrowserSupport.CSP="
