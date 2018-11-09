@@ -13,6 +13,7 @@ Therefore I add additional programs. In detail they are:
 * JDK-11.0.0 https://jdk.java.net/11/
 * NodeJS-8 https://nodejs.org/en/
 * Angular CLI https://cli.angular.io/
+* Graphviz-2.38.0 https://www.graphviz.org/
 
 
 Build Docker image
