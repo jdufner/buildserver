@@ -15,18 +15,20 @@ ARG MAVEN_VERSION=3.5.4
 RUN mkdir -p /opt/maven-$MAVEN_VERSION && \
 curl -fsSL http://apache.osuosl.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar -xzC /opt/maven-$MAVEN_VERSION --strip-components=1 && \
 ln -s /opt/maven-$MAVEN_VERSION/bin/mvn /usr/bin/mvn
+RUN mvn -version
 ENV MAVEN_HOME /usr/share/maven-$MAVEN_VERSION
 #
-# Add OpenJDK-8
-# TODO
+# OpenJDK-8 is already installed
+# /usr/lib/jvm/java-8-openjdk-amd64/jre/java -version
 #
 # Add OpenJDK-11
 RUN mkdir /opt/jdk-11 && \
 curl -fsSL https://download.java.net/java/ga/jdk11/openjdk-11_linux-x64_bin.tar.gz | tar -xzC /opt/jdk-11 --strip-components=1
+RUN /opt/jdk-11/bin/java -version
 #
 # Add Node
 RUN apt-get -y update
-RUN DEBIAN_FRONTEN=noninteractive apt-get install -y --no-install-recommends apt-utils
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apt-utils
 RUN apt-get install -y curl
 RUN curl --silent --location https://deb.nodesource.com/setup_8.x | bash -
 RUN apt-get install -y nodejs
