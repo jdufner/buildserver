@@ -10,7 +10,7 @@ The Docker image contains nothing else than JDK 8 and Jenkins.
 Therefore I add additional programs. In detail they are:
 
 * Maven-3.5.4 https://maven.apache.org/
-* JDK-11.0.0 https://jdk.java.net/11/
+* JDK-11.0.1 https://jdk.java.net/11/
 * NodeJS-8 https://nodejs.org/en/
 * Angular CLI https://cli.angular.io/
 * Graphviz-2.38.0 https://www.graphviz.org/
