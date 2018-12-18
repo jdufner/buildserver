@@ -9,17 +9,29 @@ Its Dockerfile resists at https://github.com/jenkinsci/docker .
 The Docker image contains nothing else than JDK 8 and Jenkins.
 Therefore I add additional programs. In detail they are:
 
-* Maven-3.5.4 https://maven.apache.org/
-* JDK-11.0.1 https://jdk.java.net/11/
-* NodeJS-8 https://nodejs.org/en/
-* Angular CLI https://cli.angular.io/
 * Graphviz-2.38.0 https://www.graphviz.org/
+    `graphviz` path?
+* Maven-3.5.4 https://maven.apache.org/
+    `/opt/maven-3.5.4/bin/mvn`
+* Maven-3.6.0 https://maven.apache.org/
+    `/opt/maven-3.6.0/bin/mvn`
+* JDK-11.0.1 https://jdk.java.net/11/
+    `/opt/jdk-11/bin/java`
+* NodeJS-8 https://nodejs.org/en/
+    `node` path?
+    `npm` path?
+* Angular CLI https://cli.angular.io/
+    `/usr/bin/ng`
 
+Other Executables
+-----------------
+* JDK-8
+    `/usr/lib/jvm/java-8-openjdk-amd64/jre/java`
 
 Build Docker image
 ------------------
 
-`docker build -t jdufner/jenkins:v3 .`
+`docker build -t jdufner/jenkins:latest .`
 
 
 Clean Docker images
