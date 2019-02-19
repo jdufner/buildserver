@@ -33,7 +33,7 @@ ENV MAVEN_HOME /usr/share/maven-$MAVEN_VERSION
 #
 # Add OpenJDK-11
 RUN mkdir /opt/jdk-11 && \
-curl -fsSL https://download.java.net/java/GA/jdk11/13/GPL/openjdk-11.0.1_linux-x64_bin.tar.gz | tar -xzC /opt/jdk-11 --strip-components=1
+curl -fsSL https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz | tar -xzC /opt/jdk-11 --strip-components=1
 RUN /opt/jdk-11/bin/java -version
 #
 # Add Node

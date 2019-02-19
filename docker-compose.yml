@@ -108,4 +108,3 @@ volumes:
 #      type: 'none'
 #      o: 'bind'
 #      device: '/my/path'
-
