@@ -1,4 +1,4 @@
-FROM jenkins/jenkins:lts
+FROM jenkins/jenkins:lts-jdk17
 #
 # use user if we want to install new software
 USER root
@@ -18,42 +18,47 @@ RUN dot -version
 # Add Maven to /opt/maven-$MAVEN_VERSION
 ARG MAVEN_VERSION=3.5.4
 RUN mkdir -p /opt/maven-$MAVEN_VERSION && \
-curl -fsSL http://apache.osuosl.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar -xzC /opt/maven-$MAVEN_VERSION --strip-components=1
+curl -fsSL https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar -xzC /opt/maven-$MAVEN_VERSION --strip-components=1
 #
 # Add Maven to /opt/maven-$MAVEN_VERSION
 ARG MAVEN_VERSION=3.6.3
+RUN mkdir -p /opt/maven-$MAVEN_VERSION && \
+curl -fsSL https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar -xzC /opt/maven-$MAVEN_VERSION --strip-components=1
+#
+# Add Maven to /opt/maven-$MAVEN_VERSION
+ARG MAVEN_VERSION=3.8.8
+RUN mkdir -p /opt/maven-$MAVEN_VERSION && \
+curl -fsSL https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar -xzC /opt/maven-$MAVEN_VERSION --strip-components=1
+#
+# Add Maven to /opt/maven-$MAVEN_VERSION
+ARG MAVEN_VERSION=3.9.9
 RUN mkdir -p /opt/maven-$MAVEN_VERSION && \
 curl -fsSL http://apache.osuosl.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar -xzC /opt/maven-$MAVEN_VERSION --strip-components=1 && \
 ln -s /opt/maven-$MAVEN_VERSION/bin/mvn /usr/bin/mvn
 RUN mvn -version
 ENV MAVEN_HOME /usr/share/maven-$MAVEN_VERSION
 #
-# OpenJDK-8 is already installed
-# /usr/lib/jvm/java-8-openjdk-amd64/jre/java -version
+#
+# Add OpenJDK-8
+RUN mkdir /opt/jdk-8 && \
+curl -fsSL https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u422-b05/OpenJDK8U-jdk_x64_linux_hotspot_8u422b05.tar.gz | tar -xzC /opt/jdk-8 --strip-components=1
+RUN /opt/jdk-8/bin/java -version
 #
 # Add OpenJDK-11
 RUN mkdir /opt/jdk-11 && \
-curl -fsSL https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.10%2B9/OpenJDK11U-jdk_x64_linux_hotspot_11.0.10_9.tar.gz | tar -xzC /opt/jdk-11 --strip-components=1
+curl -fsSL https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.24%2B8/OpenJDK11U-jdk_x64_linux_hotspot_11.0.24_8.tar.gz | tar -xzC /opt/jdk-11 --strip-components=1
 RUN /opt/jdk-11/bin/java -version
-# Add AdoptOpenJDK-15
-RUN mkdir /opt/jdk-15 && \
-curl -fsSL https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.2%2B7_openj9-0.24.0/OpenJDK15U-jdk_x64_linux_openj9_15.0.2_7_openj9-0.24.0.tar.gz | tar xzC /opt/jdk-15 --strip-components=1
-RUN /opt/jdk-15/bin/java --version
 #
-# Add Node
-RUN apt-get -y update
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apt-utils
-RUN apt-get install -y curl
-#RUN curl --silent --location https://deb.nodesource.com/setup_8.x | bash -
-RUN curl --silent --location https://deb.nodesource.com/setup_14.x | bash -
-RUN apt-get install -y nodejs
-RUN apt-get install -y build-essential
-RUN node -v
-RUN npm -v
+# Add OpenJDK-17
+RUN mkdir /opt/jdk-17 && \
+curl -fsSL https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_x64_linux_hotspot_17.0.12_7.tar.gz | tar -xzC /opt/jdk-17 --strip-components=1
+RUN /opt/jdk-17/bin/java -version
 #
-# Add Angular CLI
-RUN npm install -g @angular/cli
-RUN ng --version
+# Add OpenJDK-21
+RUN mkdir /opt/jdk-21 && \
+curl -fsSL https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.4_7.tar.gz | tar -xzC /opt/jdk-21 --strip-components=1
+RUN /opt/jdk-21/bin/java -version
+#
 #
 # back to user jenkins
 USER jenkins
