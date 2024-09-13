@@ -3,13 +3,13 @@ version: '3'
 services: 
   jenkins:
     #image: jenkins/jenkins:lts
-    image: jdufner/jenkins:v2
+    image: jdufner/jenkins:latest
     container_name: jenkins
     ports:
       - 8080:8080
       - 50000:50000
     volumes:
-      - jenkins:/var/jenkins_home
+      - /home/jdufner/jenkins:/var/jenkins_home
 # Add extra Java options by uncommenting the following lines
 #    environment:
 #      - EXTRA_JAVA_OPTIONS=-Xmx4g
@@ -19,7 +19,3 @@ services:
 #      nofile:
 #        soft: 32000
 #        hard: 48000
-
-volumes:
-  jenkins:
-      

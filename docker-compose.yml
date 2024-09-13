@@ -2,49 +2,32 @@ version: '3'
 
 services:
 
-  artifactory:
-    image: docker.bintray.io/jfrog/artifactory-oss:latest
-    container_name: artifactory
-    ports:
-      - 8081:8081
-    volumes:
-      - artifactory:/var/opt/jfrog/artifactory
-# Add extra Java options by uncommenting the following lines
-#    environment:
-#      - EXTRA_JAVA_OPTIONS=-Xmx4g
-    restart: always
-    ulimits:
-      nproc: 65535
-      nofile:
-        soft: 32000
-        hard: 48000
+#  artifactory:
+#    image: docker.bintray.io/jfrog/artifactory-oss:latest
+#    container_name: artifactory
+#    ports:
+#      - 8081:8081
+#    volumes:
+#      - artifactory:/var/opt/jfrog/artifactory
+## Add extra Java options by uncommenting the following lines
+##    environment:
+##      - EXTRA_JAVA_OPTIONS=-Xmx4g
+#    restart: always
+#    ulimits:
+#      nproc: 65535
+#      nofile:
+#        soft: 32000
+#        hard: 48000
 
-  nexus3:
-    image: sonatype/nexus3
-    container_name: nexus3
-    ports:
-      - 8181:8081
-    volumes:
-      - nexus3:/nexus-data
-# Add extra Java options by uncommenting the following lines
-#    environment:
-#      - EXTRA_JAVA_OPTIONS=-Xmx4g
-    restart: always
-    ulimits:
-      nproc: 65535
-      nofile:
-        soft: 32000
-        hard: 48000
-
-  sonarqube:
-    image: sonarqube:lts
-    container_name: sonarqube
-    ports:
-      - 9000:9000
-      - 9092:9092
-    volumes:
-      - sonarqube:/opt/sonarqube/data
-    restart: always
+#  sonarqube:
+#    image: sonarqube:lts
+#    container_name: sonarqube
+#    ports:
+#      - 9000:9000
+#      - 9092:9092
+#    volumes:
+#      - sonarqube:/opt/sonarqube/data
+#    restart: always
 
   jenkins:
     #image: jenkins/jenkins:lts
@@ -53,11 +36,11 @@ services:
     ports:
       - 8080:8080
       - 50000:50000
-    links:
-      - artifactory
-      - sonarqube
+#    links:
+#      - artifactory
+#      - sonarqube
     volumes:
-      - jenkins:/var/jenkins_home
+      - /home/jdufner/jenkins:/var/jenkins_home
 # Add extra Java options by uncommenting the following lines
 #    environment:
 #      - EXTRA_JAVA_OPTIONS=-Xmx4g
@@ -67,44 +50,3 @@ services:
 #      nofile:
 #        soft: 32000
 #        hard: 48000
-
-  mongo:
-    image: mongo
-    container_name: mongo
-    ports:
-      - 27017:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-    volumes:
-      - mongo:/data/db
-    restart: always
-#    ulimits:
-#      nproc: 65535
-#      nofile:
-#        soft: 32000
-#        hard: 48000
-
-  mongo-express:
-    image: mongo-express
-    container_name: mongo-express
-    ports:
-      - 8091:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: example
-    restart: always
-
-
-volumes:
-  artifactory:
-  nexus3:
-  sonarqube:
-  jenkins:
-  mongo:
-#NOT TESTED!
-#    driver: local
-#    driver_opts:
-#      type: 'none'
-#      o: 'bind'
-#      device: '/my/path'

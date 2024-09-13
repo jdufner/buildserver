@@ -36,7 +36,7 @@ RUN mkdir -p /opt/maven-$MAVEN_VERSION && \
 curl -fsSL http://apache.osuosl.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar -xzC /opt/maven-$MAVEN_VERSION --strip-components=1 && \
 ln -s /opt/maven-$MAVEN_VERSION/bin/mvn /usr/bin/mvn
 RUN mvn -version
-ENV MAVEN_HOME /usr/share/maven-$MAVEN_VERSION
+ENV MAVEN_HOME=/usr/share/maven-$MAVEN_VERSION
 #
 #
 # Add OpenJDK-8
@@ -65,4 +65,4 @@ USER jenkins
 #
 # Jenkins Settings
 # HTML Publisher plugin should display CSS in correct way
-ENV JAVA_OPTS "-Dhudson.model.DirectoryBrowserSupport.CSP="
+ENV JAVA_OPTS="-Dhudson.model.DirectoryBrowserSupport.CSP="
