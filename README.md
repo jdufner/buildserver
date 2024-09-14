@@ -16,8 +16,8 @@
 
 ### Start Jenkins
 
-`docker-compose -f docker-jenkins.yml up`
+`docker-compose -f docker-compose-jenkins.yml up`
 
 ### Stop Jenkins
 
-`docker-compose -f docker-jenkins.yml down`
+`docker-compose -f docker-compose-jenkins.yml down`
