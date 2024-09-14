@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 services:
 
@@ -52,7 +52,7 @@ services:
 #        hard: 48000
 
   watchtower:
-    image: containerrr/watchtower
+    image: containrrr/watchtower
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
