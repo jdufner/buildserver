@@ -58,5 +58,5 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-# interval 30 mean it check every 30 seconds if the observed imaged changed
-    command: --interval 60 --cleanup --include-stopped
+# interval means it check every 600 seconds if the observed images changed
+    command: --interval 600 --cleanup --include-stopped --revive-stopped
