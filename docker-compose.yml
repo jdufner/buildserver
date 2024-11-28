@@ -49,6 +49,27 @@ services:
 #        soft: 32000
 #        hard: 48000
 
+  chrome:
+    image: selenium/node-chrome:4.26.0-20241101
+    shm_size: 2gb
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_ENABLE_TRACING=false
+
+  selenium-hub:
+    image: selenium/hub:4.26.0-20241101
+    container_name: selenium-hub
+    ports:
+      - "4442:4442"
+      - "4443:4443"
+      - "4444:4444"
+    environment:
+      - SE_ENABLE_TRACING=false
+
   watchtower:
     image: containrrr/watchtower
     restart: always
@@ -57,4 +78,4 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
 # interval means it check every 600 seconds if the observed images changed
-    command: --interval 600 --cleanup --include-stopped --revive-stopped
+    command: --interval 6000 --cleanup --include-stopped --revive-stopped
