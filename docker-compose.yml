@@ -64,11 +64,31 @@ services:
     image: selenium/hub:4.27
     container_name: selenium-hub
     ports:
-      - "4442:4442"
-      - "4443:4443"
-      - "4444:4444"
+      - 4442:4442
+      - 4443:4443
+      - 4444:4444
     environment:
       - SE_ENABLE_TRACING=false
+
+  minio:
+    image: minio/minio
+    command: server --console-address ":9001" /minio/data
+    container_name: minio
+    ports:
+      - 8180:9000
+      - 8181:9001
+    volumes:
+      - /home/jdufner/minio/data:/data
+    environment:
+      - MINIO_ROOT_USER:minioadmin
+      - MINIO_ROOT_PASSWORD:minioadmin
+      - MINIO_DEFAULT_BUCKETS:mybucket
+#      - MINIO_SCHEME:http
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   watchtower:
     image: containrrr/watchtower
