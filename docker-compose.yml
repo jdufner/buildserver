@@ -90,6 +90,35 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+    volumes:
+      - /home/jdufner/postgres/data:/var/lib/postgresql/data
+  
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    ports:
+      - 8280:80
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=pgadmin4@pgadmin.org
+      - PGADMIN_DEFAULT_PASSWORD=jdufner
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    volumes:
+      # UID and GID of volume must be 5050
+      # 'sudo chown 5050:5050 /home/jdufner/pgadmin/data'
+      - /home/jdufner/pgadmin/data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+
   watchtower:
     image: containrrr/watchtower
     restart: always
