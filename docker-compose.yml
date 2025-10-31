@@ -17,22 +17,31 @@ services:
 #        soft: 32000
 #        hard: 48000
 
-#  sonarqube:
-#    image: sonarqube:lts
-#    container_name: sonarqube
-#    ports:
-#      - 9000:9000
-#      - 9092:9092
-#    volumes:
-#      - sonarqube:/opt/sonarqube/data
-#    restart: always
+  sonarqube:
+    image: sonarqube:lts
+    container_name: sonarqube
+    depends_on:
+      - postgres
+    environment:
+      - SONAR_JDBC_URL=jdbc:postgresql://postgres:5432/sonarqube
+      - SONAR_JDBC_USERNAME=sonarqube
+      - SONAR_JDBC_PASSWORD=sonarqube
+      - SONAR_JAVA_OPTS=-Xmx512m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/opt/sonarqube/logs
+    ports:
+      - 9000:9000
+      - 9092:9092
+    volumes:
+      - /home/jdufner/sonarqube/data:/opt/sonarqube/data
+      - /home/jdufner/sonarqube/extensions:/opt/sonarqube/extensions
+      - /home/jdufner/sonarqube/logs:/opt/sonarqube/logs
+    restart: always
 
   jenkins:
     image: jenkins/jenkins:lts
     #image: jdufner/jenkins:latest
     container_name: jenkins
     ports:
-      - 8080:8080
+      - 9080:8080
       - 50000:50000
 #    links:
 #      - artifactory
@@ -75,8 +84,8 @@ services:
     command: server --console-address ":9001" /minio/data
     container_name: minio
     ports:
-      - 8180:9000
-      - 8181:9001
+      - 9090:9000
+      - 9091:9001
     volumes:
       - /home/jdufner/minio/data:/data
     environment:
@@ -107,7 +116,7 @@ services:
     container_name: pgadmin
     restart: always
     ports:
-      - 8280:80
+      - 9081:80
     environment:
       - PGADMIN_DEFAULT_EMAIL=pgadmin4@pgadmin.org
       - PGADMIN_DEFAULT_PASSWORD=jdufner
