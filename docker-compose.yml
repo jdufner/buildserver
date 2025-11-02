@@ -17,24 +17,24 @@ services:
 #        soft: 32000
 #        hard: 48000
 
-  sonarqube:
-    image: sonarqube:lts
-    container_name: sonarqube
-    depends_on:
-      - postgres
-    environment:
-      - SONAR_JDBC_URL=jdbc:postgresql://postgres:5432/sonarqube
-      - SONAR_JDBC_USERNAME=sonarqube
-      - SONAR_JDBC_PASSWORD=sonarqube
-      - SONAR_JAVA_OPTS=-Xmx512m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/opt/sonarqube/logs
-    ports:
-      - 9000:9000
-      - 9092:9092
-    volumes:
-      - /home/jdufner/sonarqube/data:/opt/sonarqube/data
-      - /home/jdufner/sonarqube/extensions:/opt/sonarqube/extensions
-      - /home/jdufner/sonarqube/logs:/opt/sonarqube/logs
-    restart: always
+#  sonarqube:
+#    image: sonarqube:lts
+#    container_name: sonarqube
+#    depends_on:
+#      - postgres
+#    environment:
+#      - SONAR_JDBC_URL=jdbc:postgresql://postgres:5432/sonarqube
+#      - SONAR_JDBC_USERNAME=sonarqube
+#      - SONAR_JDBC_PASSWORD=sonarqube
+#      - SONAR_JAVA_OPTS=-Xmx512m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/opt/sonarqube/logs
+#    ports:
+#      - 9000:9000
+#      - 9092:9092
+#    volumes:
+#      - /home/jdufner/sonarqube/data:/opt/sonarqube/data
+#      - /home/jdufner/sonarqube/extensions:/opt/sonarqube/extensions
+#      - /home/jdufner/sonarqube/logs:/opt/sonarqube/logs
+#    restart: always
 
   jenkins:
     image: jenkins/jenkins:lts
@@ -59,7 +59,7 @@ services:
 #        hard: 48000
 
   chrome:
-    image: selenium/node-chrome:4.27
+    image: selenium/node-chrome:latest
     shm_size: 2gb
     depends_on:
       - selenium-hub
@@ -70,7 +70,7 @@ services:
       - SE_ENABLE_TRACING=false
 
   selenium-hub:
-    image: selenium/hub:4.27
+    image: selenium/hub:latest
     container_name: selenium-hub
     ports:
       - 4442:4442
@@ -98,9 +98,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
+  
   postgres:
-    image: postgres:16
+    image: postgres:18
     container_name: postgres
     restart: always
     ports:
@@ -109,10 +109,10 @@ services:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin
     volumes:
-      - /home/jdufner/postgres/data:/var/lib/postgresql/data
+      - /home/jdufner/postgresql:/var/lib/postgresql
   
   pgadmin:
-    image: dpage/pgadmin4
+    image: dpage/pgadmin4:latest
     container_name: pgadmin
     restart: always
     ports:
