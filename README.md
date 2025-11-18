@@ -25,16 +25,7 @@ Other tools like SonarQube etc will be added shortly.
 
 ### [Postgres docker images](https://hub.docker.com/_/postgres)
 
-* [postgres:16](https://hub.docker.com/layers/library/postgres/16/images/sha256-5193bc608de2df39d5f960895987b8896bb92efbcaf6b2761eaf7e047cc8cdf9)
-
-#### Upgrade Postgres 16 to Postgres 19
-
-    docker run --rm \
-	--mount 'type=bind,src=/home/jdufner/postgres/data,dst=/var/lib/postgresql/16/data' \
-	--mount 'type=bind,src=/home/jdufner/postgres18/docker,dst=/var/lib/postgresql/18/docker' \
-	--env 'PGDATAOLD=/var/lib/postgresql/16/data' \
-	--env 'PGDATANEW=/var/lib/postgresql/18/docker' \
-	tianon/postgres-upgrade:16-to-18
+* [postgres:18](https://hub.docker.com/layers/library/postgres/18.0/images/sha256-6b8a8a9f35a6b4ac51e67ca9e73b16fb578155572055dcca32d75d1ed49045fa)
 
 ### [PG Admin docker image](https://hub.docker.com/r/dpage/pgadmin4)
 
