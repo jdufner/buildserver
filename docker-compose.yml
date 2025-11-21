@@ -128,6 +128,56 @@ services:
     depends_on:
       - postgres
 
+  elasticsearch:
+    image: elasticsearch:9.2.1
+    container_name: elasticsearch
+    environment:
+      # single-node for development only
+      - discovery.type=single-node
+      # deactivate security for development only
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - /home/jdufner/elasticsearch/data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+ #   networks:
+ #     - elk_network
+    restart: always
+
+  kibana:
+    image: kibana:9.2.1
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - 9220:5601
+#    networks:
+#      - elk_network
+    depends_on:
+      - elasticsearch
+    restart: always
+
+  logstash:
+    image: logstash:9.2.1
+    container_name: logstash
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    volumes:
+      - ./logstash-config/logstash.conf:/use/share/logstash/pipeline/logstash.conf
+      # Mount your applogs
+      - /home/jdufner/logs:/var/log/app:ro
+    ports:
+      - 9210:5044
+#    networks:
+#      - elk_network
+    depends_on:
+      - elasticsearch
+    restart: always
+
   watchtower:
     image: containrrr/watchtower
     restart: always
@@ -137,3 +187,11 @@ services:
       - /etc/localtime:/etc/localtime:ro
 # interval means it check every 600 seconds if the observed images changed
     command: --interval 6000 --cleanup --include-stopped --revive-stopped
+
+#volumes:
+#  esdata:
+#    driver: local
+
+#networks:
+#  elk_network:
+#    driver: bridge
