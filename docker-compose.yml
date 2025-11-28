@@ -7,22 +7,28 @@ services:
     image: alpine:latest
     container_name: init-permissions
     volumes:
-      # HIER: Relativer Pfad. Docker erstellt 'docker-data' im aktuellen Ordner.
       - ./docker-data:/data
     command: >
       sh -c "
       echo 'Erstelle Unterverzeichnisse...' &&
-      mkdir -p /data/jenkins /data/minio /data/postgres /data/pgadmin /data/elasticsearch /data/logs &&
+      mkdir -p /data/jenkins /data/minio /data/postgresql /data/pgadmin /data/elasticsearch /data/logs /data/logstash/pipeline &&
       
       echo 'Setze Rechte fuer Jenkins, MinIO, Elastic (UID 1000)...' &&
-      chown -R 1000:1000 /data/jenkins /data/minio /data/elasticsearch /data/logs &&
+      chown -R 1000:1000 /data/jenkins /data/minio /data/elasticsearch /data/logs /data/logstash &&
       
       echo 'Setze Rechte fuer Postgres (UID 999)...' &&
-      chown -R 999:999 /data/postgres &&
-      chmod 700 /data/postgres &&
+      chown -R 999:999 /data/postgresql &&
+      chmod 700 /data/postgresql &&
       
       echo 'Setze Rechte fuer PgAdmin (UID 5050)...' &&
       chown -R 5050:5050 /data/pgadmin &&
+
+      echo 'Erstelle Logstash Config, falls nicht vorhanden...' &&
+      if [ ! -f /data/logstash/pipeline/logstash.conf ]; then
+        echo 'input { heartbeat { interval => 10 } } output { stdout {} }' > /data/logstash/pipeline/logstash.conf;
+      fi &&
+      echo 'Setze Rechte fuer Logstash Config (UID 1000)...' &&
+      chown 1000:1000 /data/logstash/pipeline/logstash.conf &&
       
       echo 'Fertig!'
       "
@@ -87,7 +93,6 @@ services:
         condition: service_completed_successfully
   
   postgres:
-    # Hinweis: Prüfe Version (aktuell stable ca. 16/17)
     image: postgres:18
     container_name: postgres
     restart: always
@@ -97,7 +102,7 @@ services:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin
     volumes:
-      - ./docker-data/postgres:/var/lib/postgresql/data
+      - ./docker-data/postgresql:/var/lib/postgresql/
     depends_on:
       init-permissions:
         condition: service_completed_successfully
@@ -121,7 +126,6 @@ services:
         condition: service_completed_successfully
 
   elasticsearch:
-    # Hinweis: Prüfe Version (aktuell stable ca. 8.x)
     image: elasticsearch:9.2.1
     container_name: elasticsearch
     environment:
@@ -155,9 +159,9 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     volumes:
-      # Config bleibt auch relativ
-      - ./logstash-config/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
-      # Logs jetzt auch relativ
+      # FIX: Wir mounten den ganzen Ordner "pipeline", nicht die einzelne Datei.
+      # Docker ist es egal, ob der Ordner beim Start leer ist.
+      - ./docker-data/logstash/pipeline:/usr/share/logstash/pipeline
       - ./docker-data/logs:/var/log/app:ro
     ports:
       - 9210:5044
@@ -168,7 +172,7 @@ services:
         condition: service_completed_successfully
 
   watchtower:
-    image: containrrr/watchtower
+    image: nickfedor/watchtower
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
