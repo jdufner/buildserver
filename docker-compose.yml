@@ -1,62 +1,47 @@
 services:
 
-#  artifactory:
-#    image: docker.bintray.io/jfrog/artifactory-oss:latest
-#    container_name: artifactory
-#    ports:
-#      - 8081:8081
-#    volumes:
-#      - artifactory:/var/opt/jfrog/artifactory
-## Add extra Java options by uncommenting the following lines
-##    environment:
-##      - EXTRA_JAVA_OPTIONS=-Xmx4g
-#    restart: always
-#    ulimits:
-#      nproc: 65535
-#      nofile:
-#        soft: 32000
-#        hard: 48000
+  # -----------------------------------------------------------------------
+  # INIT-CONTAINER
+  # -----------------------------------------------------------------------
+  init-permissions:
+    image: alpine:latest
+    container_name: init-permissions
+    volumes:
+      # HIER: Relativer Pfad. Docker erstellt 'docker-data' im aktuellen Ordner.
+      - ./docker-data:/data
+    command: >
+      sh -c "
+      echo 'Erstelle Unterverzeichnisse...' &&
+      mkdir -p /data/jenkins /data/minio /data/postgres /data/pgadmin /data/elasticsearch /data/logs &&
+      
+      echo 'Setze Rechte fuer Jenkins, MinIO, Elastic (UID 1000)...' &&
+      chown -R 1000:1000 /data/jenkins /data/minio /data/elasticsearch /data/logs &&
+      
+      echo 'Setze Rechte fuer Postgres (UID 999)...' &&
+      chown -R 999:999 /data/postgres &&
+      chmod 700 /data/postgres &&
+      
+      echo 'Setze Rechte fuer PgAdmin (UID 5050)...' &&
+      chown -R 5050:5050 /data/pgadmin &&
+      
+      echo 'Fertig!'
+      "
 
-#  sonarqube:
-#    image: sonarqube:lts
-#    container_name: sonarqube
-#    depends_on:
-#      - postgres
-#    environment:
-#      - SONAR_JDBC_URL=jdbc:postgresql://postgres:5432/sonarqube
-#      - SONAR_JDBC_USERNAME=sonarqube
-#      - SONAR_JDBC_PASSWORD=sonarqube
-#      - SONAR_JAVA_OPTS=-Xmx512m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/opt/sonarqube/logs
-#    ports:
-#      - 9000:9000
-#      - 9092:9092
-#    volumes:
-#      - /home/jdufner/sonarqube/data:/opt/sonarqube/data
-#      - /home/jdufner/sonarqube/extensions:/opt/sonarqube/extensions
-#      - /home/jdufner/sonarqube/logs:/opt/sonarqube/logs
-#    restart: always
+  # -----------------------------------------------------------------------
+  # DIENSTE
+  # -----------------------------------------------------------------------
 
   jenkins:
     image: jenkins/jenkins:lts
-    #image: jdufner/jenkins:latest
     container_name: jenkins
     ports:
       - 9080:8080
       - 50000:50000
-#    links:
-#      - artifactory
-#      - sonarqube
     volumes:
-      - /home/jdufner/jenkins:/var/jenkins_home
-# Add extra Java options by uncommenting the following lines
-#    environment:
-#      - EXTRA_JAVA_OPTIONS=-Xmx4g
-#    restart: always
-#    ulimits:
-#      nproc: 65535
-#      nofile:
-#        soft: 32000
-#        hard: 48000
+      - ./docker-data/jenkins:/var/jenkins_home
+    depends_on:
+      init-permissions:
+        condition: service_completed_successfully
 
   chrome:
     image: selenium/node-chrome:latest
@@ -87,19 +72,22 @@ services:
       - 9090:9000
       - 9091:9001
     volumes:
-      - /home/jdufner/minio/data:/data
+      - ./docker-data/minio:/minio/data
     environment:
-      - MINIO_ROOT_USER:minioadmin
-      - MINIO_ROOT_PASSWORD:minioadmin
-      - MINIO_DEFAULT_BUCKETS:mybucket
-#      - MINIO_SCHEME:http
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_DEFAULT_BUCKETS=mybucket
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 5s
       timeout: 5s
       retries: 5
+    depends_on:
+      init-permissions:
+        condition: service_completed_successfully
   
   postgres:
+    # Hinweis: Prüfe Version (aktuell stable ca. 16/17)
     image: postgres:18
     container_name: postgres
     restart: always
@@ -109,7 +97,10 @@ services:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin
     volumes:
-      - /home/jdufner/postgresql:/var/lib/postgresql
+      - ./docker-data/postgres:/var/lib/postgresql/data
+    depends_on:
+      init-permissions:
+        condition: service_completed_successfully
   
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -122,31 +113,31 @@ services:
       - PGADMIN_DEFAULT_PASSWORD=jdufner
       - PGADMIN_CONFIG_SERVER_MODE=False
     volumes:
-      # UID and GID of volume must be 5050
-      # 'sudo chown 5050:5050 /home/jdufner/pgadmin/data'
-      - /home/jdufner/pgadmin/data:/var/lib/pgadmin
+      - ./docker-data/pgadmin:/var/lib/pgadmin
     depends_on:
-      - postgres
+      postgres:
+        condition: service_started
+      init-permissions:
+        condition: service_completed_successfully
 
   elasticsearch:
+    # Hinweis: Prüfe Version (aktuell stable ca. 8.x)
     image: elasticsearch:9.2.1
     container_name: elasticsearch
     environment:
-      # single-node for development only
       - discovery.type=single-node
-      # deactivate security for development only
       - xpack.security.enabled=false
     ulimits:
       memlock:
         soft: -1
         hard: -1
     volumes:
-      - /home/jdufner/elasticsearch/data:/usr/share/elasticsearch/data
+      - ./docker-data/elasticsearch:/usr/share/elasticsearch/data
     ports:
       - 9200:9200
- #   networks:
- #     - elk_network
-    restart: always
+    depends_on:
+      init-permissions:
+        condition: service_completed_successfully
 
   kibana:
     image: kibana:9.2.1
@@ -155,11 +146,8 @@ services:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     ports:
       - 9220:5601
-#    networks:
-#      - elk_network
     depends_on:
       - elasticsearch
-    restart: always
 
   logstash:
     image: logstash:9.2.1
@@ -167,16 +155,17 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     volumes:
-      - ./logstash-config/logstash.conf:/use/share/logstash/pipeline/logstash.conf
-      # Mount your applogs
-      - /home/jdufner/logs:/var/log/app:ro
+      # Config bleibt auch relativ
+      - ./logstash-config/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      # Logs jetzt auch relativ
+      - ./docker-data/logs:/var/log/app:ro
     ports:
       - 9210:5044
-#    networks:
-#      - elk_network
     depends_on:
-      - elasticsearch
-    restart: always
+      elasticsearch:
+        condition: service_started
+      init-permissions:
+        condition: service_completed_successfully
 
   watchtower:
     image: containrrr/watchtower
@@ -185,13 +174,4 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-# interval means it check every 600 seconds if the observed images changed
     command: --interval 6000 --cleanup --include-stopped --revive-stopped
-
-#volumes:
-#  esdata:
-#    driver: local
-
-#networks:
-#  elk_network:
-#    driver: bridge
