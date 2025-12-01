@@ -25,7 +25,17 @@ services:
 
       echo 'Erstelle Logstash Config, falls nicht vorhanden...' &&
       if [ ! -f /data/logstash/pipeline/logstash.conf ]; then
-        echo 'input { heartbeat { interval => 10 } } output { stdout {} }' > /data/logstash/pipeline/logstash.conf;
+        echo 'input {
+          gelf {
+            port => 12201
+          }
+        }
+        output {
+          elasticsearch {
+            hosts => [\"http://elasticsearch:9200\"]
+            index => \"docker-logs-%{+YYYY.MM.dd}\"
+          }
+        }' > /data/logstash/pipeline/logstash.conf;
       fi &&
       echo 'Setze Rechte fuer Logstash Config (UID 1000)...' &&
       chown 1000:1000 /data/logstash/pipeline/logstash.conf &&
@@ -37,28 +47,124 @@ services:
   # DIENSTE
   # -----------------------------------------------------------------------
 
-  jenkins:
-    image: jenkins/jenkins:lts
-    container_name: jenkins
-    ports:
-      - 9080:8080
-      - 50000:50000
+  elasticsearch:
+    image: elasticsearch:9.2.1
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     volumes:
-      - ./docker-data/jenkins:/var/jenkins_home
+      - ./docker-data/elasticsearch:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+#    logging:
+#      driver: gelf
+#      options:
+#        gelf-address: "udp://127.0.0.1:12201"
+#        tag: "elasticsearch"
     depends_on:
       init-permissions:
         condition: service_completed_successfully
 
-  chrome:
-    image: selenium/node-chrome:latest
-    shm_size: 2gb
-    depends_on:
-      - selenium-hub
+  kibana:
+    image: kibana:9.2.1
+    container_name: kibana
     environment:
-      - SE_EVENT_BUS_HOST=selenium-hub
-      - SE_EVENT_BUS_PUBLISH_PORT=4442
-      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
-      - SE_ENABLE_TRACING=false
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - 9220:5601
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://127.0.0.1:12201"
+        tag: "kibana"
+    depends_on:
+#      init-permissions:
+#        condition: service_completed_successfully
+      elasticsearch:
+        condition: service_started
+
+  logstash:
+    image: logstash:9.2.1
+    container_name: logstash
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    volumes:
+      # FIX: Wir mounten den ganzen Ordner "pipeline", nicht die einzelne Datei.
+      # Docker ist es egal, ob der Ordner beim Start leer ist.
+      - ./docker-data/logstash/pipeline:/usr/share/logstash/pipeline
+      - ./docker-data/logs:/var/log/app:ro
+    ports:
+      - 9210:5044
+      - 12201:12201/udp
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9600"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+#    logging:
+#      driver: gelf
+#      options:
+#        gelf-address: "udp://127.0.0.1:12201"
+#        tag: "logstash"
+    depends_on:
+#      init-permissions:
+#        condition: service_completed_successfully
+      elasticsearch:
+        condition: service_started
+
+  postgres:
+    image: postgres:18
+    container_name: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+    volumes:
+      - ./docker-data/postgresql:/var/lib/postgresql/
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://127.0.0.1:12201"
+        tag: "postgres"
+    depends_on:
+#      init-permissions:
+#        condition: service_completed_successfully
+#      elasticsearch:
+#        condition: service_started
+      logstash:
+        condition: service_healthy
+  
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: always
+    ports:
+      - 9081:80
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=pgadmin4@pgadmin.org
+      - PGADMIN_DEFAULT_PASSWORD=jdufner
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    volumes:
+      - ./docker-data/pgadmin:/var/lib/pgadmin
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://127.0.0.1:12201"
+        tag: "pgadmin"
+    depends_on:
+#      init-permissions:
+#        condition: service_completed_successfully
+#      logstash:
+#        condition: service_healthy
+      postgres:
+        condition: service_started
 
   selenium-hub:
     image: selenium/hub:latest
@@ -69,6 +175,39 @@ services:
       - 4444:4444
     environment:
       - SE_ENABLE_TRACING=false
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://127.0.0.1:12201"
+        tag: "selenium-hub"
+    depends_on:
+#      init-permissions:
+#        condition: service_completed_successfully
+#      elasticsearch:
+#        condition: service_started
+      logstash:
+        condition: service_healthy
+
+  chrome:
+    image: selenium/node-chrome:latest
+    shm_size: 2gb
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_ENABLE_TRACING=false
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://127.0.0.1:12201"
+        tag: "chrome"
+    depends_on:
+#      init-permissions:
+#        condition: service_completed_successfully
+#      logstash:
+#        condition: service_healthy
+      selenium-hub:
+        condition: service_started
 
   minio:
     image: minio/minio
@@ -88,88 +227,37 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://127.0.0.1:12201"
+        tag: "minio"
     depends_on:
-      init-permissions:
-        condition: service_completed_successfully
+#      init-permissions:
+#        condition: service_completed_successfully
+      logstash:
+        condition: service_healthy
   
-  postgres:
-    image: postgres:18
-    container_name: postgres
-    restart: always
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
     ports:
-      - 5432:5432
-    environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=admin
+      - 9080:8080
+      - 50000:50000
     volumes:
-      - ./docker-data/postgresql:/var/lib/postgresql/
+      - ./docker-data/jenkins:/var/jenkins_home
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://127.0.0.1:12201"
+        tag: "jenkins"
     depends_on:
       init-permissions:
         condition: service_completed_successfully
-  
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: pgadmin
-    restart: always
-    ports:
-      - 9081:80
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=pgadmin4@pgadmin.org
-      - PGADMIN_DEFAULT_PASSWORD=jdufner
-      - PGADMIN_CONFIG_SERVER_MODE=False
-    volumes:
-      - ./docker-data/pgadmin:/var/lib/pgadmin
-    depends_on:
-      postgres:
-        condition: service_started
-      init-permissions:
-        condition: service_completed_successfully
-
-  elasticsearch:
-    image: elasticsearch:9.2.1
-    container_name: elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    volumes:
-      - ./docker-data/elasticsearch:/usr/share/elasticsearch/data
-    ports:
-      - 9200:9200
-    depends_on:
-      init-permissions:
-        condition: service_completed_successfully
-
-  kibana:
-    image: kibana:9.2.1
-    container_name: kibana
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-    ports:
-      - 9220:5601
-    depends_on:
-      - elasticsearch
-
-  logstash:
-    image: logstash:9.2.1
-    container_name: logstash
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-    volumes:
-      # FIX: Wir mounten den ganzen Ordner "pipeline", nicht die einzelne Datei.
-      # Docker ist es egal, ob der Ordner beim Start leer ist.
-      - ./docker-data/logstash/pipeline:/usr/share/logstash/pipeline
-      - ./docker-data/logs:/var/log/app:ro
-    ports:
-      - 9210:5044
-    depends_on:
       elasticsearch:
         condition: service_started
-      init-permissions:
-        condition: service_completed_successfully
+      logstash:
+        condition: service_healthy
 
   watchtower:
     image: nickfedor/watchtower
@@ -179,3 +267,15 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     command: --interval 6000 --cleanup --include-stopped --revive-stopped
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://127.0.0.1:12201"
+        tag: "watchtower"
+    depends_on:
+#      init-permissions:
+#        condition: service_completed_successfully
+#      elasticsearch:
+#        condition: service_started
+      logstash:
+        condition: service_healthy

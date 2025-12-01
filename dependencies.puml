@@ -1,0 +1,42 @@
+@startuml
+
+component "Init-Permissions" as Init
+component "Elastic" as Elastic
+component "Kibana" as Kibana
+component "Logstash" as Logstash
+component "Postgres" as Postgres
+component "PgAdmin" as PgAdmin
+component "Chrome" as Chrome
+component "Selenium-Hub" as Selenium
+component "MinIO" as Minio
+component "Jenkins" as Jenkins
+component "Watchtower" as Watchtower
+
+Elastic ..> Init : completely successfully
+'Kibana ..> Init : completely successfully
+Kibana ..> Elastic : started
+'Logstash ..> Init : completely successfully
+Logstash ..> Elastic : started
+'Postgres ..> Init : completely successfully
+'Postgres ..> Elastic : started
+Postgres ..> Logstash : healthy
+'PgAdmin ..> Init : completely successfully
+'PgAdmin ..> Logstash : healthy
+PgAdmin ..> Postgres : started
+'Selenium ..> Init : completely started
+'Selenium ..> Elastic : started
+Selenium ..> Logstash : healthy
+'Chrome ..> Init : completely started
+'Chrome ..> Logstash : healthy
+Chrome ..> Selenium : started
+'Minio ..> Init : completely started
+'Minio ..> Elastic : started
+Minio ..> Logstash : healthy
+'Jenkins ..> Init : completely started
+'Jenkins ..> Elastic : started
+Jenkins ..> Logstash : healthy
+'Watchtower ..> Init : completely started
+'Watchtower ..> Elastic : started
+Watchtower ..> Logstash : healthy
+
+@enduml
