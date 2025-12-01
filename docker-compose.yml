@@ -29,11 +29,32 @@ services:
           gelf {
             port => 12201
           }
+          file {
+            path => \"/var/log/app/webscraper.json\"
+            start_position => \"beginning\"
+            codec => \"json\"
+            tags => [\"webscraper\"]
+            sincedb_path => \"/dev/null\"
+          }
+        }
+        filter {
+          if \"webscraper\" in [tags] {
+            json {
+              source => \"message\"
+            }
+          }
         }
         output {
-          elasticsearch {
-            hosts => [\"http://elasticsearch:9200\"]
-            index => \"docker-logs-%{+YYYY.MM.dd}\"
+          if [tag] == \"webscraper\" or \"webscraper\" in [tags] {
+            elasticsearch {
+              hosts => [\"http://elasticsearch:9200\"]
+              index => \"webscraper-logs-%{+YYYY.MM.dd}\"
+            }
+          } else {
+            elasticsearch {
+              hosts => [\"http://elasticsearch:9200\"]
+              index => \"docker-logs-%{+YYYY.MM.dd}\"
+            }
           }
         }' > /data/logstash/pipeline/logstash.conf;
       fi &&
@@ -61,11 +82,11 @@ services:
       - ./docker-data/elasticsearch:/usr/share/elasticsearch/data
     ports:
       - 9200:9200
-#    logging:
-#      driver: gelf
-#      options:
-#        gelf-address: "udp://127.0.0.1:12201"
-#        tag: "elasticsearch"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://127.0.0.1:12201"
+        tag: "elasticsearch"
     depends_on:
       init-permissions:
         condition: service_completed_successfully
@@ -97,7 +118,8 @@ services:
       # FIX: Wir mounten den ganzen Ordner "pipeline", nicht die einzelne Datei.
       # Docker ist es egal, ob der Ordner beim Start leer ist.
       - ./docker-data/logstash/pipeline:/usr/share/logstash/pipeline
-      - ./docker-data/logs:/var/log/app:ro
+      - /tmp/logs:/var/log/app:ro
+      # - ./docker-data/logs:/var/log/app:ro
     ports:
       - 9210:5044
       - 12201:12201/udp
