@@ -30,7 +30,7 @@ services:
             port => 12201
           }
           file {
-            path => \"/var/log/app/webscraper.json\"
+            path => \"/var/log/app/webscraper.log\"
             start_position => \"beginning\"
             codec => \"json\"
             tags => [\"webscraper\"]
