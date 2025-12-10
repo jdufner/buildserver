@@ -56,6 +56,29 @@ To view the logging information Kibana must be configured
 2. Create a new data view with the pattern `docker-logs-*`
 3. Go to _Discover_ to view the logs.
 
+### Postgres
+
+#### Mandatory configuration changes
+
+By default, Postgres blocks username / password login from non-localhost.
+This can be fixed in `pg_hba.conf`.
+Add a line:
+
+    host all all all trust
+
+Probably, there is a line
+
+    host all all all scram-sha-256
+
+That line must be commented or removed.
+Refer to [Postgres Client Authentication](https://www.postgresql.org/docs/current/auth-pg-hba-conf.html).
+
+This can be automated by a short script.
+
+    sed -i 's/^\(host\s\+all\s\+all\s\+all\s\+\)scram-sha-256/\1trust/' ./docker-data/postgresql/18/docker/pg_hba.conf
+
+To make it effective either restart Postgres or reload the configuration (`systemctl reload postgresql` or `pg_ctl reload`).
+
 ### pgAdmin 4
 
     http://localhost:9081/browser/
